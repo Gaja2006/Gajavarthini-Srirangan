@@ -1,0 +1,77 @@
+# Install required libraries (run once in your environment)
+# pip install nltk pandas matplotlib seaborn
+
+import nltk
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
+# Download VADER lexicon (run once)
+nltk.download('vader_lexicon')
+
+# Initialize VADER sentiment analyzer
+sia = SentimentIntensityAnalyzer()
+
+# Sample social media posts (replace with your data, e.g., from a CSV or API)
+posts = [
+    "I love this new phone! 😍 #awesome",
+    "This is the worst service ever 😡 #fail",
+    "Just another day, nothing special. #meh",
+    "Excited for the weekend! 🎉",
+    "Feeling so sad today... 😢"
+]
+
+# Function to analyze sentiment and categorize emotion
+def analyze_sentiment(post):
+    scores = sia.polarity_scores(post)
+    compound = scores['compound']
+    if compound >= 0.3:
+        emotion = "Positive"
+    elif compound <= -0.3:
+        emotion = "Negative"
+    else:
+        emotion = "Neutral"
+    
+    return {
+        'post': post,
+        'positive': scores['pos'],
+        'negative': scores['neg'],
+        'neutral': scores['neu'],
+        'compound': scores['compound'],
+        'emotion': emotion
+    }
+
+# Analyze all posts
+results = [analyze_sentiment(post) for post in posts]
+df = pd.DataFrame(results)
+
+# --- Graph 1: Bar Plot of Sentiment Scores ---
+plt.figure(figsize=(12, 6))
+# Melt DataFrame to long format for easier plotting
+df_melt = df.melt(id_vars='post', value_vars=['positive', 'negative', 'neutral', 'compound'],
+                  var_name='Sentiment', value_name='Score')
+# Create bar plot
+sns.barplot(x='post', y='Score', hue='Sentiment', data=df_melt)
+plt.title('Sentiment Scores for Social Media Posts', fontsize=14)
+plt.xlabel('Post', fontsize=12)
+plt.ylabel('Score', fontsize=12)
+plt.xticks(rotation=45, ha='right')
+plt.legend(title='Sentiment Type')
+plt.tight_layout()
+# Save and show plot
+plt.savefig('sentiment_bar_plot.png')
+plt.show()
+
+# --- Graph 2: Pie Chart of Emotion Distribution ---
+plt.figure(figsize=(8, 8))
+emotion_counts = df['emotion'].value_counts()
+plt.pie(emotion_counts, labels=emotion_counts.index, autopct='%1.1f%%', startangle=90, colors=sns.color_palette('pastel'))
+plt.title('Emotion Distribution Across Posts', fontsize=14)
+plt.axis('equal')  # Equal aspect ratio ensures pie is circular
+# Save and show plot
+plt.savefig('emotion_pie_chart.png')
+plt.show()
+
+# Save results to CSV (optional)
+df.to_csv('sentiment_analysis_results.csv', index=False)
